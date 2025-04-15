@@ -1,5 +1,6 @@
-transphone
+phonemizer
 pandas
 # google-cloud-translate==2.0.1
 phonemizer
 langid
+pynini

@@ -25,10 +25,10 @@ You could directly download the dataset from kaggle (https://www.kaggle.com/data
 ```
 
 mkdir ../dataset
-cd dataset
+cd ../dataset
 #!/bin/bash
 curl -L -o ./genius-song-lyrics-with-language-information.zip\
-https://www.kaggle.com/api/v1/datasets/download/carlosgdcj/genius-song-lyrics-with-language-information
+    https://www.kaggle.com/api/v1/datasets/download/carlosgdcj/genius-song-lyrics-with-language-information
 unzip genius-song-lyrics-with-language-information.zip 
 
 ```
