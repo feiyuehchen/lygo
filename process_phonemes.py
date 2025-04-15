@@ -135,7 +135,7 @@ def detect_language(text: str) -> str:
         logger.error(f"Language detection failed: {str(e)}, defaulting to English")
         return 'en-us'
 
-@lru_cache(maxsize=5000)
+# @lru_cache(maxsize=5000)
 def text2phoneme(lyrics):
     """Convert text to phoneme with better error handling"""
     if not lyrics or pd.isna(lyrics):
