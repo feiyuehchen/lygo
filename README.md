@@ -1,21 +1,13 @@
-# lygop
+# lygo
 
-# XPF-lyrics
-
-This is a open-source project converting multi-language lyrics into IPA phonemes. For the original XPF project, please refer to the following links:
-
-
-Check out their interactive website: [The XPF Corpus](https://cohenpr-xpf.github.io/XPF/)
-
-The preliminary manual of the corpus can be found [here](https://cohenpr-xpf.github.io/XPF/manual/xpf_manual.pdf).
 
 ## Usage
 
 ### Setup
 ```python
 conda create -n lygop python=3.11
-conda activate lygop
-git clone https://github.com/feiyuehchen/lygop
+conda activate lygo
+git clone https://github.com/feiyuehchen/lygo
 cd lygop
 pip install -r requirements.txt
 ```
