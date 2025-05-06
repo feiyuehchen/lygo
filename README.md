@@ -1,4 +1,8 @@
-# lygo
+# lygop
+
+
+This is a open-source project converting multi-language lyrics into IPA phonemes. 
+
 
 
 ## Usage
@@ -6,8 +10,8 @@
 ### Setup
 ```python
 conda create -n lygop python=3.11
-conda activate lygo
-git clone https://github.com/feiyuehchen/lygo
+conda activate lygop
+git clone https://github.com/feiyuehchen/lygop
 cd lygop
 pip install -r requirements.txt
 ```

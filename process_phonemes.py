@@ -6,12 +6,11 @@ from tqdm import tqdm
 import logging
 from phonemizer import phonemize
 import time
-from functools import lru_cache
+# from functools import lru_cache
 import csv
 from phonemizer.backend import EspeakBackend
 import gc
 
-from time import sleep
 
 # Set fixed seed to ensure consistent language detection results
 DetectorFactory.seed = 0
@@ -23,6 +22,9 @@ logger = logging.getLogger(__name__)
 # Get all supported languages by espeak backend
 # espeak_backend = EspeakBackend('espeak')
 # SUPPORTED_ESPEAK_LANGUAGES = espeak_backend.supported_languages()
+
+
+
 
 # Expanded language mapping with more languages
 LANGUAGE_MAPPING = {
@@ -90,6 +92,7 @@ LANGUAGE_MAPPING = {
     'ro': 'ro',     # Romanian
     'si': 'si',     # Sinhala
     'sk': 'sk',     # Slovak
+    'sl': 'sl',     # Slovenian
     'so': 'so',     # Somali
     'es-la': 'es-la', # Spanish (Latin America)
     'sw': 'sw',     # Swahili
@@ -111,7 +114,7 @@ LANGUAGE_MAPPING = {
 logger.info(f"Total supported languages: {len(LANGUAGE_MAPPING)}")
 logger.info(f"Supported languages: {', '.join(sorted(LANGUAGE_MAPPING.keys()))}")
 
-@lru_cache(maxsize=10000)
+# @lru_cache(maxsize=10000)
 def detect_language(text: str) -> str:
     """Detect language using multiple methods and return mapped language code"""
     try:
@@ -119,11 +122,12 @@ def detect_language(text: str) -> str:
             return 'en-us'  # Default to English
         
         # Use two different language detection libraries
-        lang_id = langid.classify(text)[0]
+        # lang_id = langid.classify(text)[0]
         lang_detect = detect(text)
         
         # Prioritize langid results as it performs better for short texts
-        detected_lang = lang_id
+        # detected_lang = lang_id
+        detected_lang = lang_detect
         
         # Map to phonemizer supported language code
         if detected_lang in LANGUAGE_MAPPING:
@@ -141,41 +145,27 @@ def text2phoneme(lyrics):
     if not lyrics or pd.isna(lyrics):
         return None, None
         
-    lyric_list = lyrics.split('\n')
-    phoneme_list = []
-    lang_list = []
-    for lyric in lyric_list:
-        try:
-            lang_code = detect_language(lyric)
-            
-            # Use a timeout to prevent hanging
-            
-            phoneme_sentence = phonemize(
-                lyric,
-                language=lang_code,
-                backend='espeak',
-                strip=True,
-                preserve_punctuation=True,
-                with_stress=True,
-                # prepend_text=True,
-                preserve_empty_lines =True,
-                words_mismatch='ignore',
-
-            )
-            
-        except Exception as e:
-            logger.error(f"Phoneme conversion failed: {str(e)}")
-            phoneme_sentence = None
-            lang_code = None
+    try:
+        lang_code = detect_language(lyrics)
         
-        phoneme_list.append(phoneme_sentence)
-        lang_list.append(lang_code)
-
-    # print('\n'.join(phoneme_list), ','.join(lang_list))
-    # sleep(60)
+        phoneme_sentence = phonemize(
+            lyrics,
+            language=lang_code,
+            backend='espeak',
+            strip=True,
+            preserve_punctuation=True,
+            with_stress=True,
+            preserve_empty_lines=True,
+            words_mismatch='ignore',
+            njobs=1,  # Reduce from 10 to 1
+        )
+        
+    except Exception as e:
+        logger.error(f"Phoneme conversion failed: {str(e)}")
+        phoneme_sentence = None
+        lang_code = None
     
-    return '\n'.join(phoneme_list), ','.join(lang_list)
-
+    return phoneme_sentence, lang_code
 
 def process_dataset_in_chunks(path: str, output_dir: str, chunk_size=1000, start_chunk=0):
     """Process CSV file in chunks with better error handling"""
@@ -193,6 +183,9 @@ def process_dataset_in_chunks(path: str, output_dir: str, chunk_size=1000, start
         total_rows = 0
     
     # Process file in chunks
+    backend = None
+    files_processed = 0
+    
     try:
         for chunk_df in pd.read_csv(path, chunksize=chunk_size, on_bad_lines='skip'):
             # Skip already processed chunks
@@ -201,6 +194,16 @@ def process_dataset_in_chunks(path: str, output_dir: str, chunk_size=1000, start
                 continue
             
             logger.info(f"Processing chunk {chunk_index}")
+            
+            # Restart espeak backend every 1500 files
+            if files_processed > 1000:
+                logger.info("Restarting espeak backend to prevent resource issues")
+                if backend:
+                    del backend
+                backend = EspeakBackend()
+                files_processed = 0
+                # Force garbage collection
+                gc.collect()
             
             # Add phonemes and language columns if they don't exist
             if 'phonemes' not in chunk_df.columns:
@@ -231,14 +234,15 @@ def process_dataset_in_chunks(path: str, output_dir: str, chunk_size=1000, start
             
             processed_chunks += 1
             chunk_index += 1
+            files_processed += len(chunk_df)
             
-            # # Clear memory
-            # del chunk_df
-            # gc.collect()
-
+            # Enable garbage collection after each chunk
+            gc.collect()
+            
             
     except Exception as e:
         logger.error(f"Error processing chunks: {str(e)}")
+    
     
     logger.info(f"Processed {processed_chunks} chunks successfully")
 
@@ -299,7 +303,9 @@ def process_and_save_chunk(chunk_rows, header, chunk_index, output_dir, overall_
     
     # Log completion
     chunk_duration = time.time() - chunk_start_time
+
     logger.info(f"Chunk {chunk_index} completed, took {chunk_duration:.2f} seconds, progress: {overall_pbar.n}/{overall_pbar.total}")
+
 
 def combine_processed_chunks(output_dir: str, final_output_path: str):
     """Combine all processed chunks into a single file using memory-efficient approach"""
@@ -324,6 +330,7 @@ def combine_processed_chunks(output_dir: str, final_output_path: str):
         
         # Process each chunk file
         for chunk_file in tqdm(chunk_files, desc="Combining data chunks"):
+
             with open(os.path.join(output_dir, chunk_file), 'r', encoding='utf-8') as infile:
                 reader = csv.reader(infile)
                 next(reader)  # Skip header
@@ -341,6 +348,7 @@ def combine_processed_chunks(output_dir: str, final_output_path: str):
                 # Write any remaining rows
                 if batch:
                     writer.writerows(batch)
+
     
     logger.info(f"All data chunks combined into {final_output_path}")
 

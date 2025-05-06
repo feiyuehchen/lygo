@@ -1,6 +1,8 @@
-phonemizer
+transphone
 pandas
-# google-cloud-translate==2.0.1
-phonemizer
+langdetect
 langid
-pynini
+matplotlib
+numpy
+seaborn
+openxlsx
