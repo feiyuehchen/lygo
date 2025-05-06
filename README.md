@@ -1,4 +1,4 @@
-# lygop
+# Lygo: Crosslinguistic Evaluation for Lyrics Generation
 
 
 This is a open-source project converting multi-language lyrics into IPA phonemes. 
@@ -10,9 +10,9 @@ This is a open-source project converting multi-language lyrics into IPA phonemes
 ### Setup
 ```python
 conda create -n lygop python=3.11
-conda activate lygop
-git clone https://github.com/feiyuehchen/lygop
-cd lygop
+conda activate lygo
+git clone https://github.com/feiyuehchen/lygo
+cd lygo
 pip install -r requirements.txt
 ```
 
@@ -32,7 +32,7 @@ unzip genius-song-lyrics-with-language-information.zip
 The defult data structure is set as 
 
 ```
-|- lygop
+|- lygo
 |- dataset
     |- song_lyrics.csv
 ```
